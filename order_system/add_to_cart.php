@@ -97,5 +97,5 @@ foreach ($items as $row) {
 }
 echo "</table>";
 echo "<p><strong>總金額：$total 元</strong></p>";
-echo "<a href='menu.php'>繼續選購</a> | <a href='checkout.php'>前往結帳</a>";
+echo "<a href='menu.php'>繼續選購</a> | <a href='checkout.php'>送出訂單</a>";
 ?>
