@@ -30,7 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    echo "登入失敗，請檢查電話、密碼與身份類型";
+    echo "<p style='color:red;'>登入失敗，請檢查電話、密碼與身份類型</p>";
 }
 ?>
 
@@ -45,3 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     密碼: <input type="password" name="password" required><br>
     <input type="submit" value="登入">
 </form>
+
+<br>
+<button onclick="location.href='register_customer.php'">註冊新顧客</button>
+<button onclick="location.href='register_restaurant.php'">註冊新商家</button>

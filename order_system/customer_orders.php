@@ -12,9 +12,11 @@ if (!isset($_SESSION['customer_id'])) {
 
 $customer_id = $_SESSION['customer_id'];
 
-// 撈取所有訂單與最新狀態
+// 撈取所有訂單與最新狀態與總金額
 $sql = "
-    SELECT o.order_id, o.created_at, r.name AS restaurant_name, s.status
+    SELECT o.order_id, o.created_at, r.name AS restaurant_name,
+           SUM(oi.quantity * mi.price) AS total_price,
+           s.status
     FROM `order` o
     JOIN (
         SELECT osh1.order_id, osh1.status
@@ -25,11 +27,11 @@ $sql = "
             GROUP BY order_id
         ) osh2 ON osh1.order_id = osh2.order_id AND osh1.timestamp = osh2.latest_time
     ) s ON o.order_id = s.order_id
-    JOIN order_item od ON o.order_id = od.order_id
-    JOIN menu_item m ON od.item_id = m.item_id
-    JOIN restaurant r ON m.restaurant_id = r.restaurant_id
+    JOIN order_item oi ON o.order_id = oi.order_id
+    JOIN menu_item mi ON oi.item_id = mi.item_id
+    JOIN restaurant r ON mi.restaurant_id = r.restaurant_id
     WHERE o.customer_id = ?
-    GROUP BY o.order_id, s.status
+    GROUP BY o.order_id, s.status, r.name, o.created_at
     ORDER BY o.created_at DESC
 ";
 $stmt = $pdo->prepare($sql);
@@ -48,23 +50,43 @@ foreach ($orders as $order) {
     $grouped[$order['status']][] = $order;
 }
 
-// 顯示每個分類
-function renderOrders($title, $orders) {
+// 顯示訂單表格函式
+function renderOrdersTable($title, $orders) {
     echo "<h3>$title</h3>";
     if (count($orders) === 0) {
         echo "<p>無訂單</p>";
-    } else {
-        echo "<ul>";
-        foreach ($orders as $o) {
-            echo "<li>訂單編號 #{$o['order_id']}，餐廳：{$o['restaurant_name']}，建立時間：{$o['created_at']}</li>";
-        }
-        echo "</ul>";
+        return;
     }
+    echo "<table border='1' cellpadding='5' cellspacing='0'>";
+    echo "<tr>
+            <th>訂單編號</th>
+            <th>餐廳名稱</th>
+            <th>建立時間</th>
+            <th>總金額</th>
+            <th>狀態</th>
+          </tr>";
+    foreach ($orders as $o) {
+        $created = htmlspecialchars($o['created_at']);
+        $rest_name = htmlspecialchars($o['restaurant_name']);
+        $status = htmlspecialchars($o['status']);
+        $order_id = (int)$o['order_id'];
+        $total = number_format($o['total_price'], 2);
+        echo "<tr>
+                <td>#{$order_id}</td>
+                <td>{$rest_name}</td>
+                <td>{$created}</td>
+                <td>NT$ {$total}</td>
+                <td>{$status}</td>
+              </tr>";
+    }
+    echo "</table><br>";
 }
 
 echo "<h2>我的訂單</h2>";
-renderOrders("🟡 等待商家確認 (created)", $grouped['created']);
-renderOrders("🟢 商家已接受 (accepted)", $grouped['accepted']);
-renderOrders("🔴 訂單已取消 (canceled)", $grouped['canceled']);
-renderOrders("✅ 訂單已完成 (completed)", $grouped['completed']);
+renderOrdersTable("等待商家確認 (created)", $grouped['created']);
+renderOrdersTable("商家已接受 (accepted)", $grouped['accepted']);
+renderOrdersTable("訂單已取消 (canceled)", $grouped['canceled']);
+renderOrdersTable("訂單已完成 (completed)", $grouped['completed']);
+
+echo "<button onclick=\"location.href='add_to_cart.php'\">返回購物車</button>";
 ?>

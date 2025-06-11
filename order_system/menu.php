@@ -17,6 +17,7 @@ $sql = "
     JOIN restaurant r ON m.restaurant_id = r.restaurant_id
 ";
 $result = $pdo->query($sql);
+echo "<button onclick=\"location.href='customer_orders.php'\">我的訂單</button>";
 ?>
 
 <h2>所有菜單項目</h2>

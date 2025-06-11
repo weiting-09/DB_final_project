@@ -1,4 +1,7 @@
 <?php
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 session_start();
 require 'db.php';
 
@@ -38,11 +41,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_item'])) {
 }
 
 // 訂單狀態更新
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['order_id'], $_POST['action']) && in_array($_POST['action'], ['accepted', 'canceled', 'completed'])) {
-    $stmt = $pdo->prepare("INSERT INTO order_status_history (order_id, status, timestamp) VALUES (?, ?, NOW())");
-    $stmt->execute([$_POST['order_id'], $_POST['action']]);
-    echo "<p style='color:green;'>訂單 {$_POST['order_id']} 狀態已更新為 {$_POST['action']}。</p>";
+if ($_SERVER['REQUEST_METHOD'] === 'POST' &&
+    isset($_POST['order_id'], $_POST['action']) &&
+    in_array($_POST['action'], ['accepted', 'canceled', 'completed'])) {
+
+    $order_id = $_POST['order_id'];
+    $action = $_POST['action'];
+
+    // 檢查是否已經有該 order_id + status 的紀錄
+    $checkStmt = $pdo->prepare("SELECT 1 FROM order_status_history WHERE order_id = ? AND status = ?");
+    $checkStmt->execute([$order_id, $action]);
+    $exists = $checkStmt->fetch();
+
+    if (!$exists) {
+        $insertStmt = $pdo->prepare("INSERT INTO order_status_history (order_id, status, timestamp) VALUES (?, ?, NOW())");
+        $insertStmt->execute([$order_id, $action]);
+        echo "<p style='color:green;'>訂單 {$order_id} 狀態已更新為 {$action}。</p>";
+    } else {
+        echo "<p style='color:orange;'>訂單 {$order_id} 已經是 {$action} 狀態，無需重複更新。</p>";
+    }
 }
+
 
 // 取得餐廳資訊
 $stmt = $pdo->prepare("SELECT * FROM restaurant WHERE restaurant_id = ?");
@@ -121,11 +140,6 @@ function render_orders($orders, $status) {
                     <input type='hidden' name='order_id' value='{$order['order_id']}'>
                     <input type='hidden' name='action' value='completed'>
                     <input type='submit' value='完成'>
-                </form>
-                <form method='post' style='display:inline'>
-                    <input type='hidden' name='order_id' value='{$order['order_id']}'>
-                    <input type='hidden' name='action' value='canceled'>
-                    <input type='submit' value='取消'>
                 </form>
             </td>";
         }
