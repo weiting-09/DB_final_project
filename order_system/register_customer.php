@@ -10,7 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt = $pdo->prepare("INSERT INTO customer (name, phone, password) VALUES (?, ?, ?)");
     $stmt->execute([$name, $phone, $password]);
 
-    header("Location: login.php");
+    header("Location: index.php");
     exit;
 }
 ?>

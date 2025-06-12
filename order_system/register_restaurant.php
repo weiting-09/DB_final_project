@@ -11,7 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt = $pdo->prepare("INSERT INTO restaurant (name, location, phone, password) VALUES (?, ?, ?, ?)");
     $stmt->execute([$name, $location, $phone, $password]);
 
-    header("Location: login.php");
+    header("Location: index.php");
     exit;
 }
 ?>
